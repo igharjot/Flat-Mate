@@ -1,4 +1,4 @@
-# SplitNest
+# FlatMate
 
 A flatmate expense manager built with FastAPI. Track shared costs, calculate who owes whom, and settle dues — all from a clean web interface.
 

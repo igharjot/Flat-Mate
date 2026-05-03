@@ -144,4 +144,3 @@ def test_stats():
     assert data["total_expenses"] == 15000
     assert data["num_expenses"] == 1
     assert "Rent" in data["by_category"]
-    

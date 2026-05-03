@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FlatMate — Rent Split Calculator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #F7F3EE;
+      --card: #FFFFFF;
+      --accent: #C4704F;
+      --accent-light: #F0E0D6;
+      --accent-dark: #A05A3C;
+      --text: #2C2825;
+      --muted: #8A7E78;
+      --border: #E8E0D8;
+      --green: #4A9068;
+      --red: #C44F4F;
+      --shadow: 0 2px 16px rgba(44,40,37,0.08);
+      --shadow-lg: 0 8px 32px rgba(44,40,37,0.14);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--text);
+      color: white;
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo { display: flex; align-items: center; gap: 0.6rem; }
+    .logo-icon { font-size: 1.5rem; }
+    .logo h1 { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: white; }
+    .logo span { color: var(--accent); }
+    .health-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green); animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    /* ── Stats Bar ── */
+    .stats-bar {
+      background: var(--accent);
+      padding: 0.6rem 2rem;
+      display: flex;
+      gap: 2.5rem;
+      overflow-x: auto;
+    }
+    .stat-item { display: flex; align-items: center; gap: 0.5rem; color: white; white-space: nowrap; }
+    .stat-item .label { font-size: 0.78rem; opacity: 0.85; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-item .value { font-weight: 600; font-size: 1rem; }
+
+    /* ── Layout ── */
+    main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 0.55rem 1.4rem;
+      border: 2px solid var(--border);
+      background: var(--card);
+      border-radius: 50px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .tab-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    .tab-content { display: none; animation: fadeIn 0.25s ease; }
+    .tab-content.active { display: block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 1.6rem;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 1.2rem;
+    }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2rem;
+      color: var(--text);
+      margin-bottom: 1.2rem;
+    }
+
+    /* ── Grid ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+    @media(max-width:700px){ .grid-2{grid-template-columns:1fr} }
+
+    /* ── Form ── */
+    .form-group { margin-bottom: 1rem; }
+    label { display: block; font-size: 0.83rem; font-weight: 500; color: var(--muted); margin-bottom: 0.35rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    input, select { width: 100%; padding: 0.65rem 0.9rem; border: 1.5px solid var(--border); border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; color: var(--text); background: var(--bg); transition: border 0.2s; outline: none; }
+    input:focus, select:focus { border-color: var(--accent); background: white; }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.4rem; }
+    .checkbox-item { display: flex; align-items: center; gap: 0.4rem; }
+    .checkbox-item input[type=checkbox] { width: auto; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 0.65rem 1.5rem;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent-dark); transform: translateY(-1px); }
+    .btn-sm { padding: 0.3rem 0.75rem; font-size: 0.82rem; border-radius: 7px; }
+    .btn-danger { background: #FEE8E8; color: var(--red); border: 1px solid #FBCECE; }
+    .btn-danger:hover { background: var(--red); color: white; }
+    .btn-success { background: #E6F4ED; color: var(--green); border: 1px solid #C3E2D0; }
+    .btn-success:hover { background: var(--green); color: white; }
+
+    /* ── Flatmate List ── */
+    .flatmate-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .flatmate-chip {
+      display: flex; align-items: center; gap: 0.75rem;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 50px;
+      padding: 0.45rem 1rem 0.45rem 0.5rem;
+    }
+    .avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--accent-light);
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.9rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .chip-name { font-weight: 500; font-size: 0.9rem; }
+    .chip-email { font-size: 0.78rem; color: var(--muted); }
+
+    /* ── Expense List ── */
+    .expense-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.9rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .expense-item:last-child { border-bottom: none; }
+    .expense-left { display: flex; gap: 1rem; align-items: center; }
+    .cat-badge {
+      background: var(--accent-light); color: var(--accent);
+      font-size: 0.75rem; font-weight: 600;
+      padding: 0.25rem 0.65rem; border-radius: 20px;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+    .expense-desc { font-weight: 500; }
+    .expense-meta { font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; }
+    .expense-amount { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; color: var(--accent); text-align: right; }
+    .expense-right { display: flex; align-items: center; gap: 0.75rem; }
+
+    /* ── Balances ── */
+    .balance-card {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.6rem;
+    }
+    .balance-name { font-weight: 500; }
+    .balance-amount { font-weight: 600; font-size: 1rem; }
+    .positive { color: var(--green); }
+    .negative { color: var(--red); }
+    .neutral { color: var(--muted); }
+
+    .transaction-item {
+      display: flex; align-items: center; gap: 1rem;
+      background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 12px; padding: 1rem 1.2rem;
+      margin-bottom: 0.65rem;
+      flex-wrap: wrap;
+    }
+    .arrow { font-size: 1.2rem; color: var(--accent); }
+    .settle-btn-wrap { margin-left: auto; }
+
+    /* ── Empty state ── */
+    .empty { text-align: center; padding: 3rem 1rem; color: var(--muted); }
+    .empty-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+    .empty p { font-size: 0.95rem; }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      background: var(--text); color: white;
+      padding: 0.8rem 1.4rem; border-radius: 12px;
+      font-size: 0.9rem; opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 999;
+      max-width: 300px;
+    }
+    #toast.show { opacity: 1; }
+    #toast.success { background: var(--green); }
+    #toast.error { background: var(--red); }
+
+    /* ── Section labels ── */
+    .section-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <span class="logo-icon">🏠</span>
+    <h1>Flat<span>Mate</span></h1>
+  </div>
+  <div style="display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:#aaa;">
+    <div class="health-dot"></div> Live
+  </div>
+</header>
+
+<div class="stats-bar" id="statsBar">
+  <div class="stat-item"><span class="label">Total Spent</span><span class="value" id="statTotal">₹0</span></div>
+  <div class="stat-item"><span class="label">Flatmates</span><span class="value" id="statPeople">0</span></div>
+  <div class="stat-item"><span class="label">Expenses</span><span class="value" id="statExp">0</span></div>
+  <div class="stat-item"><span class="label">Top Spender</span><span class="value" id="statTop">—</span></div>
+</div>
+
+<main>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('flatmates')">👥 Flatmates</button>
+    <button class="tab-btn" onclick="switchTab('expenses')">🧾 Add Expense</button>
+    <button class="tab-btn" onclick="switchTab('balances')">⚖️ Balances</button>
+    <button class="tab-btn" onclick="switchTab('settle')">✅ Settle Up</button>
+  </div>
+
+  <!-- ── FLATMATES TAB ── -->
+  <div class="tab-content active" id="tab-flatmates">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Add New Flatmate</div>
+        <div class="form-group">
+          <label>Full Name *</label>
+          <input type="text" id="fname" placeholder="e.g. Harjot Singh" />
+        </div>
+        <div class="form-group">
+          <label>Email (optional)</label>
+          <input type="email" id="femail" placeholder="e.g. harjot@flat.com" />
+        </div>
+        <button class="btn btn-primary" onclick="addFlatmate()">+ Add Flatmate</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Current Flatmates</div>
+        <div class="flatmate-grid" id="flatmateList">
+          <div class="empty"><div class="empty-icon">🛋️</div><p>No flatmates yet</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── EXPENSES TAB ── -->
+  <div class="tab-content" id="tab-expenses">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Log an Expense</div>
+        <div class="form-group">
+          <label>Description *</label>
+          <input type="text" id="edesc" placeholder="e.g. Monthly Rent, Groceries..." />
+        </div>
+        <div class="form-group">
+          <label>Amount (₹) *</label>
+          <input type="number" id="eamount" placeholder="0.00" min="0" step="0.01" />
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="ecat">
+            <option value="Rent">🏠 Rent</option>
+            <option value="Groceries">🛒 Groceries</option>
+            <option value="Utilities">💡 Utilities</option>
+            <option value="Internet">📶 Internet</option>
+            <option value="Cleaning">🧹 Cleaning</option>
+            <option value="Food">🍕 Food / Takeout</option>
+            <option value="General">📦 General</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Paid by</label>
+          <select id="epaidby"></select>
+        </div>
+        <div class="form-group">
+          <label>Split among</label>
+          <div class="checkbox-group" id="esplitGroup">
+            <p style="color:var(--muted);font-size:0.85rem">Add flatmates first</p>
+          </div>
+        </div>
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:0.5rem;">
+          <button class="btn btn-primary" onclick="addExpense()">Add Expense</button>
+          <button class="btn btn-sm btn-success" onclick="selectAll()">Select All</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Expense History</div>
+        <div id="expenseList">
+          <div class="empty"><div class="empty-icon">🧾</div><p>No expenses logged yet</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BALANCES TAB ── -->
+  <div class="tab-content" id="tab-balances">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">Net Balances</div>
+        <p style="font-size:0.83rem;color:var(--muted);margin-bottom:1rem;">🟢 = owed money &nbsp;|&nbsp; 🔴 = owes money</p>
+        <div id="balanceSummary">
+          <div class="empty"><div class="empty-icon">⚖️</div><p>Add expenses to see balances</p></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Spending by Category</div>
+        <div id="categoryBreakdown">
+          <div class="empty"><div class="empty-icon">📊</div><p>No data yet</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SETTLE UP TAB ── -->
+  <div class="tab-content" id="tab-settle">
+    <div class="card">
+      <div class="card-title">Who Owes Whom</div>
+      <p style="font-size:0.83rem;color:var(--muted);margin-bottom:1.2rem;">Simplified transactions to settle all debts fairly</p>
+      <div id="transactionList">
+        <div class="empty"><div class="empty-icon">✅</div><p>All settled up! No outstanding dues.</p></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+  let flatmates = [];
+
+  // ── Utilities ──────────────────────────────────────────────────────────────
+  function toast(msg, type='success') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = `show ${type}`;
+    setTimeout(() => el.className = '', 2800);
+  }
+
+  function fmt(n) {
+    return '₹' + parseFloat(n).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+
+  function initial(name) {
+    return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0,2);
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+    if(name === 'balances') loadBalances();
+    if(name === 'settle') loadTransactions();
+  }
+
+  // ── Flatmates ──────────────────────────────────────────────────────────────
+  async function loadFlatmates() {
+    const res = await fetch('/api/flatmates');
+    flatmates = await res.json();
+    renderFlatmates();
+    renderExpenseForm();
+  }
+
+  function renderFlatmates() {
+    const el = document.getElementById('flatmateList');
+    if (!flatmates.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">🛋️</div><p>No flatmates yet</p></div>';
+      return;
+    }
+    el.innerHTML = flatmates.map(f => `
+      <div class="flatmate-chip">
+        <div class="avatar">${initial(f.name)}</div>
+        <div>
+          <div class="chip-name">${f.name}</div>
+          ${f.email ? `<div class="chip-email">${f.email}</div>` : ''}
+        </div>
+        <button class="btn btn-sm btn-danger" onclick="removeFlatmate('${f.id}')">✕</button>
+      </div>
+    `).join('');
+  }
+
+  async function addFlatmate() {
+    const name = document.getElementById('fname').value.trim();
+    const email = document.getElementById('femail').value.trim();
+    if (!name) { toast('Please enter a name', 'error'); return; }
+    const res = await fetch('/api/flatmates', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({name, email})
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.detail, 'error'); return; }
+    document.getElementById('fname').value = '';
+    document.getElementById('femail').value = '';
+    toast(`${name} added! 🎉`);
+    await loadFlatmates();
+    await loadStats();
+  }
+
+  async function removeFlatmate(id) {
+    await fetch(`/api/flatmates/${id}`, {method:'DELETE'});
+    toast('Flatmate removed');
+    await loadFlatmates();
+    await loadStats();
+  }
+
+  // ── Expense Form ────────────────────────────────────────────────────────────
+  function renderExpenseForm() {
+    const paidBy = document.getElementById('epaidby');
+    const splitGroup = document.getElementById('esplitGroup');
+    if (!flatmates.length) {
+      paidBy.innerHTML = '<option>Add flatmates first</option>';
+      splitGroup.innerHTML = '<p style="color:var(--muted);font-size:0.85rem">Add flatmates first</p>';
+      return;
+    }
+    paidBy.innerHTML = flatmates.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+    splitGroup.innerHTML = flatmates.map(f => `
+      <label class="checkbox-item">
+        <input type="checkbox" class="split-check" value="${f.id}" checked />
+        ${f.name}
+      </label>
+    `).join('');
+  }
+
+  function selectAll() {
+    document.querySelectorAll('.split-check').forEach(c => c.checked = true);
+  }
+
+  async function addExpense() {
+    const desc = document.getElementById('edesc').value.trim();
+    const amount = parseFloat(document.getElementById('eamount').value);
+    const cat = document.getElementById('ecat').value;
+    const paid_by = document.getElementById('epaidby').value;
+    const split_among = [...document.querySelectorAll('.split-check:checked')].map(c => c.value);
+    if (!desc) { toast('Enter a description', 'error'); return; }
+    if (!amount || amount <= 0) { toast('Enter a valid amount', 'error'); return; }
+    if (!split_among.length) { toast('Select at least one person', 'error'); return; }
+    const res = await fetch('/api/expenses', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({description:desc, amount, paid_by, split_among, category:cat})
+    });
+    const data = await res.json();
+    if (!res.ok) { toast(data.detail, 'error'); return; }
+    document.getElementById('edesc').value = '';
+    document.getElementById('eamount').value = '';
+    toast(`Expense added! ${fmt(amount)} split among ${split_among.length} people.`);
+    await loadExpenses();
+    await loadStats();
+  }
+
+  // ── Expenses List ──────────────────────────────────────────────────────────
+  async function loadExpenses() {
+    const res = await fetch('/api/expenses');
+    const expenses = await res.json();
+    const el = document.getElementById('expenseList');
+    if (!expenses.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">🧾</div><p>No expenses logged yet</p></div>';
+      return;
+    }
+    el.innerHTML = [...expenses].reverse().map(e => `
+      <div class="expense-item">
+        <div class="expense-left">
+          <div>
+            <div><span class="cat-badge">${e.category}</span></div>
+            <div class="expense-desc" style="margin-top:0.4rem">${e.description}</div>
+            <div class="expense-meta">Paid by ${e.paid_by_name} · ${e.date} · Split: ${e.split_among_names.join(', ')}</div>
+          </div>
+        </div>
+        <div class="expense-right">
+          <div class="expense-amount">${fmt(e.amount)}</div>
+          <button class="btn btn-sm btn-danger" onclick="deleteExpense('${e.id}')">✕</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function deleteExpense(id) {
+    await fetch(`/api/expenses/${id}`, {method:'DELETE'});
+    toast('Expense deleted');
+    await loadExpenses();
+    await loadStats();
+  }
+
+  // ── Balances ───────────────────────────────────────────────────────────────
+  async function loadBalances() {
+    const res = await fetch('/api/balances');
+    const data = await res.json();
+    const sum = document.getElementById('balanceSummary');
+
+    if (!data.summary.length) {
+      sum.innerHTML = '<div class="empty"><div class="empty-icon">⚖️</div><p>Add flatmates and expenses first</p></div>';
+    } else {
+      sum.innerHTML = data.summary.map(b => {
+        const cls = b.balance > 0.01 ? 'positive' : b.balance < -0.01 ? 'negative' : 'neutral';
+        const label = b.balance > 0.01 ? `gets back ${fmt(b.balance)}` : b.balance < -0.01 ? `owes ${fmt(Math.abs(b.balance))}` : 'All settled ✓';
+        return `
+          <div class="balance-card">
+            <div>
+              <div class="balance-name">${b.name}</div>
+              <div style="font-size:0.82rem;color:var(--muted);margin-top:0.2rem">${label}</div>
+            </div>
+            <div class="balance-amount ${cls}">${fmt(b.balance)}</div>
+          </div>`;
+      }).join('');
+    }
+
+    // Category breakdown
+    const statsRes = await fetch('/api/stats');
+    const stats = await statsRes.json();
+    const catEl = document.getElementById('categoryBreakdown');
+    const cats = stats.by_category;
+    if (!Object.keys(cats).length) {
+      catEl.innerHTML = '<div class="empty"><div class="empty-icon">📊</div><p>No data yet</p></div>';
+      return;
+    }
+    const total = Object.values(cats).reduce((a,b)=>a+b,0);
+    catEl.innerHTML = Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([cat,amt]) => {
+      const pct = Math.round((amt/total)*100);
+      return `
+        <div style="margin-bottom:0.9rem">
+          <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem">
+            <span style="font-size:0.9rem;font-weight:500">${cat}</span>
+            <span style="font-size:0.9rem;font-weight:600;color:var(--accent)">${fmt(amt)} <span style="color:var(--muted);font-size:0.8rem">(${pct}%)</span></span>
+          </div>
+          <div style="background:var(--border);border-radius:99px;height:6px;overflow:hidden">
+            <div style="background:var(--accent);width:${pct}%;height:100%;border-radius:99px;transition:width 0.6s ease"></div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Transactions / Settle Up ───────────────────────────────────────────────
+  async function loadTransactions() {
+    const res = await fetch('/api/balances');
+    const data = await res.json();
+    const el = document.getElementById('transactionList');
+    if (!data.transactions.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">✅</div><p>All settled up! No outstanding dues.</p></div>';
+      return;
+    }
+    el.innerHTML = data.transactions.map(t => `
+      <div class="transaction-item">
+        <div class="avatar">${initial(t.from_name)}</div>
+        <div>
+          <strong>${t.from_name}</strong>
+          <div style="font-size:0.82rem;color:var(--muted)">pays</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="avatar" style="background:#E6F4ED;color:var(--green)">${initial(t.to_name)}</div>
+        <div>
+          <strong>${t.to_name}</strong>
+          <div style="font-size:0.82rem;color:var(--muted)">receives</div>
+        </div>
+        <div style="font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--accent);margin:0 0.5rem">${fmt(t.amount)}</div>
+        <div class="settle-btn-wrap">
+          <button class="btn btn-sm btn-success" onclick="settle('${t.from}','${t.to}',${t.amount})">Mark Paid ✓</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function settle(from_id, to_id, amount) {
+    const res = await fetch('/api/settle', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({from_id, to_id, amount})
+    });
+    if (res.ok) {
+      toast('Payment recorded! ✅');
+      await loadTransactions();
+      await loadStats();
+    }
+  }
+
+  // ── Stats ──────────────────────────────────────────────────────────────────
+  async function loadStats() {
+    const res = await fetch('/api/stats');
+    const s = await res.json();
+    document.getElementById('statTotal').textContent = fmt(s.total_expenses);
+    document.getElementById('statPeople').textContent = s.num_flatmates;
+    document.getElementById('statExp').textContent = s.num_expenses;
+    document.getElementById('statTop').textContent = s.top_spender ? `${s.top_spender.name} (${fmt(s.top_spender.amount)})` : '—';
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  async function init() {
+    await loadFlatmates();
+    await loadExpenses();
+    await loadStats();
+  }
+
+  init();
+</script>
+</body>
+</html>

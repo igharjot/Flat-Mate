@@ -1,0 +1,24 @@
+name: Trivy Scan
+
+on:
+  workflow_call:
+
+jobs:
+  trivy:
+    name: Image Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t splitnest:scan .
+
+      - name: Run Trivy scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: splitnest:scan
+          format: table
+          exit-code: 0
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true

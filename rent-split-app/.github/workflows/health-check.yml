@@ -1,0 +1,52 @@
+name: Health Check
+
+on:
+  workflow_call:
+
+jobs:
+  health-check:
+    name: API Smoke Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: pip install -r requirements.txt
+
+      - name: Start server
+        run: |
+          uvicorn main:app --host 0.0.0.0 --port 8000 &
+          sleep 4
+
+      - name: GET /health
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health)
+          if [ "$status" != "200" ]; then exit 1; fi
+
+      - name: GET /
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/)
+          if [ "$status" != "200" ]; then exit 1; fi
+
+      - name: POST /api/flatmates
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:8000/api/flatmates \
+            -H "Content-Type: application/json" \
+            -d '{"name":"Test User","email":"test@flat.com"}')
+          if [ "$status" != "201" ]; then exit 1; fi
+
+      - name: GET /api/balances
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/balances)
+          if [ "$status" != "200" ]; then exit 1; fi
+
+      - name: GET /api/stats
+        run: |
+          status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/api/stats)
+          if [ "$status" != "200" ]; then exit 1; fi

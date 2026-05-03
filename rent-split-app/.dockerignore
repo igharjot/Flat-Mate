@@ -1,0 +1,7 @@
+.github/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+data.json
+.env

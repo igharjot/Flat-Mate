@@ -1,0 +1,57 @@
+name: Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+    # Stage 1 - parallel
+    lint:
+      uses: ./.github/workflows/lint.yml
+
+    docker-lint:
+      uses: ./.github/workflows/docker-lint.yml
+
+    # Stage 2
+    test:
+      needs: lint
+      uses: ./.github/workflows/test.yml
+
+    # Stage 3
+    docker-build:
+      needs: [test, docker-lint]
+      uses: ./.github/workflows/docker-build.yml
+
+    # Stage 4 - parallel
+    trivy:
+      needs: [docker-build]
+      uses: ./.github/workflows/trivy.yml
+
+    health-check:
+      needs: docker-build
+      uses: ./.github/workflows/health-check.yml
+
+    # Stage 5
+    summary:
+      name: Summary
+      runs-on: ubuntu-latest
+      needs: [lint, docker-lint, test, docker-build, trivy, health-check]
+      if: always()
+
+      steps:
+        - name: Result
+          run: |
+            echo "Lint:         ${{ needs.lint.result }}"
+            echo "Docker Lint:  ${{ needs.docker-lint.result }}"
+            echo "Test:         ${{ needs.test.result }}"
+            echo "Docker Build: ${{ needs.docker-build.result }}"
+            echo "Trivy Scan:   ${{ needs.trivy.result }}"
+            echo "Health Check: ${{ needs.health-check.result }}"
+
+            if [ "${{ needs.health-check.result }}" != "success" ]; then
+              echo "Pipeline failed."
+              exit 1
+            fi
+
+            echo "Pipeline passed. App is ready."

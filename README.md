@@ -29,7 +29,7 @@ A flatmate expense manager built with FastAPI. Track shared costs, calculate who
 ### Run locally
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/splitnest.git
+git clone https://github.com/igharjot/Flat-Mate.git
 cd splitnest
 pip install -r requirements.txt
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
